@@ -19,4 +19,16 @@ class Reserva extends Model
         'fecha_fin',
         'estado'
     ];
+
+    // Relación con Cliente
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class, 'id_cliente');
+    }
+
+    // Relación con Habitación
+    public function habitacion()
+    {
+        return $this->belongsTo(Habitacion::class, 'id_habitacion');
+    }
 }

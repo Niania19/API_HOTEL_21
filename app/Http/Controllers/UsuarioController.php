@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Reserva;
 
 class UsuarioController extends Controller
 {
@@ -34,24 +35,17 @@ class UsuarioController extends Controller
         ], 201);
     }
 
-    public function show($id)
+   public function show($id)
     {
-        $usuario = User::find($id);
+        // dd() detiene la ejecución inmediatamente y muestra el mensaje.
+        dd("¡Éxito! La petición superó el middleware y llegó al controlador. El ID es: " . $id);
 
-        if (!$usuario) {
-            return response()->json(['mensaje' => 'Usuario no encontrado'], 404);
-        }
-
-        return response()->json($usuario, 200);
+        $reserva = Reserva::with(['cliente', 'habitacion'])->findOrFail($id);
+        return response()->json($reserva, 200);
     }
-
     public function update(Request $request, $id)
     {
-        $usuario = User::find($id);
-
-        if (!$usuario) {
-            return response()->json(['mensaje' => 'Usuario no encontrado'], 404);
-        }
+        $usuario = User::findOrFail($id);
 
         $usuario->update($request->except('password'));
 
@@ -64,11 +58,7 @@ class UsuarioController extends Controller
     
     public function destroy($id)
     {
-        $usuario = User::find($id);
-
-        if (!$usuario) {
-            return response()->json(['mensaje' => 'Usuario no encontrado'], 404);
-        }
+        $usuario = User::findOrFail($id);
 
         $usuario->delete();
 

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use App\Model\Cliente;
 
 class AuthController extends Controller
 {
@@ -31,22 +31,24 @@ class AuthController extends Controller
     }
 
     public function login(Request $request)
-    {
-        $user = User::where('email', $request->email)->first();
+{
+    $cliente = Cliente::where('correo', $request->correo)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'message' => 'Credenciales incorrectas'
-            ], 401);
-        }
-
-        $token = $user->createToken('api_token')->plainTextToken;
+    if (!$cliente || !Hash::check($request->password, $cliente->password)) {
 
         return response()->json([
-            'message' => 'Login exitoso',
-            'token' => $token
-        ]);
+            'message' => 'Credenciales incorrectas'
+        ], 401);
     }
+
+    $token = $cliente->createToken('cliente_token')->plainTextToken;
+
+    return response()->json([
+        'message' => 'Login exitoso',
+        'token' => $token,
+        'cliente' => $cliente
+    ]);
+}
 
     public function logout(Request $request)
     {

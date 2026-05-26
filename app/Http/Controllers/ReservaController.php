@@ -2,65 +2,85 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Reserva;
 use Illuminate\Http\Request;
+use App\Models\Reserva;
 
 class ReservaController extends Controller
 {
+    // ADMIN: Listar todos los pedidos
     public function index()
     {
-        return response()->json(Reserva::all(), 200);
+        $reservas = Reserva::with(['cliente', 'habitacion'])->get();
+        return response()->json($reservas, 200);
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'id_cliente' => 'required|integer',
-            'id_habitacion' => 'required|integer',
-            'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
-            'estado' => 'required|string|max:50'
-        ]);
+    // ADMIN: Ver detalle de un pedido por id
+public function show($id)
+{
+    // 1. Buscamos la reserva por su ID de forma simple
+    $reserva = Reserva::find($id);
 
-        $reserva = Reserva::create($request->all());
-
-        return response()->json(['mensaje' => 'Reserva creada correctamente', 'data' => $reserva], 201);
+    // 2. Si no existe, devolvemos 404 de inmediato
+    if (!$reserva) {
+        return response()->json(['mensaje' => 'Reserva no encontrada'], 404);
     }
 
-    public function show($id)
-    {
-        $reserva = Reserva::find($id);
+    // 3. Cargamos los datos del cliente y habitación manualmente
+    // Esto es mucho más seguro que usar ->with() si hay problemas de memoria
+    $cliente = $reserva->cliente;
+    $habitacion = $reserva->habitacion;
 
-        if (!$reserva) {
-            return response()->json(['mensaje' => 'Reserva no encontrada'], 404);
-        }
-
-        return response()->json($reserva, 200);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $reserva = Reserva::find($id);
-
-        if (!$reserva) {
-            return response()->json(['mensaje' => 'Reserva no encontrada'], 404);
-        }
-
-        $reserva->update($request->all());
-
-        return response()->json(['mensaje' => 'Reserva actualizada correctamente', 'data' => $reserva], 200);
-    }
-
+    // 4. Devolvemos un array manual (esto nunca debería cerrar el servidor)
+    return response()->json([
+        'id_reserva'    => $reserva->id_reserva,
+        'id_cliente'    => $reserva->id_cliente,
+        'id_habitacion' => $reserva->id_habitacion,
+        'fecha_inicio'  => $reserva->fecha_inicio,
+        'fecha_fin'     => $reserva->fecha_fin,
+        'estado'        => $reserva->estado,
+        'cliente'       => $cliente ? [
+            'id_cliente' => $cliente->id_cliente,
+            'nombre'     => $cliente->nombre,
+            'apellido'   => $cliente->apellido,
+            'correo'     => $cliente->correo
+        ] : null,
+        'habitacion'    => $habitacion ? [
+            'id_habitacion' => $habitacion->id_habitacion,
+            'numero'        => $habitacion->numero,
+            'precio'        => $habitacion->precio
+        ] : null
+    ], 200);
+}
+    // ADMIN: Cancelar pedido por id
     public function destroy($id)
     {
-        $reserva = Reserva::find($id);
+        $reserva = Reserva::findOrFail($id);
+        $reserva->estado = 'cancelado';
+        $reserva->save();
 
-        if (!$reserva) {
-            return response()->json(['mensaje' => 'Reserva no encontrada'], 404);
-        }
+        return response()->json([
+            'mensaje' => 'Pedido cancelado correctamente'
+        ], 200);
+    }
 
-        $reserva->delete();
+    // ADMIN: Ver historial de pedidos de un cliente
+    public function pedidosPorCliente($id_cliente)
+    {
+        $reservas = Reserva::where('id_cliente', $id_cliente)
+            ->with('habitacion')
+            ->get();
 
-        return response()->json(['mensaje' => 'Reserva eliminada correctamente'], 200);
+        return response()->json($reservas, 200);
+    }
+
+    // ADMIN: Ver detalle de pedido de un cliente
+    public function pedidoDetalleCliente($id_cliente, $id_reserva)
+    {
+        $reserva = Reserva::where('id_cliente', $id_cliente)
+            ->where('id_reserva', $id_reserva)
+            ->with('habitacion')
+            ->firstOrFail();
+
+        return response()->json($reserva, 200);
     }
 }

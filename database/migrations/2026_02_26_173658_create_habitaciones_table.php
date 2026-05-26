@@ -20,10 +20,10 @@ return new class extends Migration
             $table->decimal('precio',8,2);
             $table->string('estado');
 
-            $table->foreign('id_hotel')
-                ->references('id_hotel')
-                ->on('hoteles')
-                ->onDelete('cascade');
+           $table->foreign('id_hotel')
+      ->references('id')
+      ->on('hoteles')
+      ->onDelete('cascade');
 
             $table->foreign('id_tipo')
                 ->references('id_tipo')
